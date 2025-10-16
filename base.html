@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PixelPaste | Base64 Converter</title>
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/feather-icons"></script>
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#6366f1',
+                        secondary: '#8b5cf6',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .code-editor {
+            min-height: 200px;
+            font-family: 'Courier New', monospace;
+            resize: vertical;
+        }
+        .vanta-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.15;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col">
+    <div id="vanta-bg" class="vanta-bg"></div>
+    
+    <!-- Header -->
+    <header class="bg-white shadow-sm">
+        <div class="container mx-auto px-4 py-6">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <i data-feather="image" class="text-primary-600 w-8 h-8"></i>
+                    <h1 class="text-2xl font-bold text-gray-800">PixelPaste</h1>
+                </div>
+                <nav class="hidden md:flex space-x-6">
+                    <a href="#" class="text-primary-600 font-medium border-b-2 border-primary-600">Converter</a>
+                    <a href="#" class="text-gray-600 hover:text-primary-600 transition">API</a>
+                    <a href="#" class="text-gray-600 hover:text-primary-600 transition">Docs</a>
+                    <a href="#" class="text-gray-600 hover:text-primary-600 transition">About</a>
+                </nav>
+                <button class="md:hidden text-gray-600">
+                    <i data-feather="menu"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow container mx-auto px-4 py-12">
+        <div class="max-w-4xl mx-auto">
+            <div class="text-center mb-12">
+                <h2 class="text-4xl font-bold text-gray-800 mb-4">Base64 End-to-End Converter</h2>
+                <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+                    Convert text, images, and files to Base64 format instantly. Decode Base64 strings back to their original form.
+                </p>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-8">
+                <!-- Input Section -->
+                <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                    <div class="bg-primary-600 px-6 py-4">
+                        <h3 class="text-lg font-semibold text-white">Input</h3>
+                    </div>
+                    <div class="p-6">
+                        <div class="flex space-x-4 mb-4">
+                            <button id="text-tab" class="px-4 py-2 bg-primary-100 text-primary-700 rounded-md font-medium">Text</button>
+                            <button id="file-tab" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-md font-medium">File</button>
+                            <button id="url-tab" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-md font-medium">URL</button>
+                        </div>
+                        
+                        <div id="text-input" class="block">
+                            <textarea id="input-text" class="code-editor w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none" placeholder="Enter text to encode..."></textarea>
+                        </div>
+                        
+                        <div id="file-input" class="hidden">
+                            <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                                <i data-feather="upload" class="w-12 h-12 text-gray-400 mx-auto mb-4"></i>
+                                <p class="text-gray-600 mb-4">Drag & drop files here or click to browse</p>
+                                <input type="file" id="file-upload" class="hidden">
+                                <label for="file-upload" class="px-4 py-2 bg-primary-600 text-white rounded-md font-medium cursor-pointer hover:bg-primary-700 transition">Select File</label>
+                            </div>
+                        </div>
+                        
+                        <div id="url-input" class="hidden">
+                            <input type="url" id="image-url" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none mb-4" placeholder="Enter image URL...">
+                            <button id="fetch-url" class="w-full px-4 py-2 bg-primary-600 text-white rounded-md font-medium hover:bg-primary-700 transition">Fetch & Convert</button>
+                        </div>
+                        
+                        <div class="mt-6">
+                            <button id="encode-btn" class="w-full px-6 py-3 bg-primary-600 text-white font-semibold rounded-lg hover:bg-primary-700 transition flex items-center justify-center space-x-2">
+                                <i data-feather="arrow-right" class="w-5 h-5"></i>
+                                <span>Encode to Base64</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Output Section -->
+                <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                    <div class="bg-primary-600 px-6 py-4">
+                        <h3 class="text-lg font-semibold text-white">Output</h3>
+                    </div>
+                    <div class="p-6">
+                        <div class="flex space-x-4 mb-4">
+                            <button id="output-text-tab" class="px-4 py-2 bg-primary-100 text-primary-700 rounded-md font-medium">Text</button>
+                            <button id="output-image-tab" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-md font-medium">Image</button>
+                        </div>
+                        
+                        <div id="output-text" class="block">
+                            <textarea id="output-text-area" class="code-editor w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none" placeholder="Base64 output will appear here..." readonly></textarea>
+                        </div>
+                        
+                        <div id="output-image" class="hidden">
+                            <div class="border border-gray-300 rounded-lg p-8 text-center min-h-64 flex items-center justify-center">
+                                <div id="preview-container">
+                                    <p class="text-gray-500">Image preview will appear here</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6">
+                            <button id="decode-btn" class="w-full px-6 py-3 bg-secondary-500 text-white font-semibold rounded-lg hover:bg-secondary-600 transition flex items-center justify-center space-x-2" disabled>
+                                <i data-feather="arrow-left" class="w-5 h-5"></i>
+                                <span>Decode from Base64</span>
+                            </button>
+                        </div>
+                        
+                        <div class="mt-4 flex space-x-2">
+                            <button id="copy-btn" class="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-md font-medium hover:bg-gray-300 transition flex items-center justify-center space-x-2">
+                                <i data-feather="copy" class="w-4 h-4"></i>
+                                <span>Copy</span>
+                            </button>
+                            <button id="download-btn" class="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-md font-medium hover:bg-gray-300 transition flex items-center justify-center space-x-2">
+                                <i data-feather="download" class="w-4 h-4"></i>
+                                <span>Download</span>
+                            </button>
+                            <button id="clear-btn" class="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-md font-medium hover:bg-gray-300 transition flex items-center justify-center space-x-2">
+                                <i data-feather="trash-2" class="w-4 h-4"></i>
+                                <span>Clear</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-gray-200 py-8">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="flex items-center space-x-2 mb-4 md:mb-0">
+                    <i data-feather="image" class="text-primary-600 w-6 h-6"></i>
+                    <span class="text-lg font-medium text-gray-800">PixelPaste</span>
+                </div>
+                <div class="flex space-x-6">
+                    <a href="#" class="text-gray-600 hover:text-primary-600 transition"><i data-feather="github"></i></a>
+                    <a href="#" class="text-gray-600 hover:text-primary-600 transition"><i data-feather="twitter"></i></a>
+                    <a href="#" class="text-gray-600 hover:text-primary-600 transition"><i data-feather="linkedin"></i></a>
+                </div>
+            </div>
+            <div class="mt-6 text-center md:text-left text-sm text-gray-500">
+                <p>© 2023 PixelPaste. All rights reserved. | <a href="#" class="text-primary-600 hover:underline">Privacy Policy</a> | <a href="#" class="text-primary-600 hover:underline">Terms of Service</a></p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.globe.min.js"></script>
+    <script>
+        // Initialize Vanta.js background
+        VANTA.GLOBE({
+            el: "#vanta-bg",
+            mouseControls: true,
+            touchControls: true,
+            gyroControls: false,
+            minHeight: 200.00,
+            minWidth: 200.00,
+            scale: 1.00,
+            scaleMobile: 1.00,
+            color: "#6366f1",
+            backgroundColor: "#f8fafc",
+            size: 0.7
+        });
+
+        // Initialize Feather Icons
+        feather.replace();
+
+        // Tab switching functionality
+        const tabs = {
+            'text-tab': 'text-input',
+            'file-tab': 'file-input',
+            'url-tab': 'url-input',
+            'output-text-tab': 'output-text',
+            'output-image-tab': 'output-image'
+        };
+
+        Object.entries(tabs).forEach(([tabId, contentId]) => {
+            document.getElementById(tabId).addEventListener('click', () => {
+                // Hide all content
+                Object.values(tabs).forEach(id => {
+                    document.getElementById(id).classList.add('hidden');
+                });
+                
+                // Show selected content
+                document.getElementById(contentId).classList.remove('hidden');
+                
+                // Update active tab styling
+                Object.keys(tabs).forEach(id => {
+                    const tab = document.getElementById(id);
+                    if (id === tabId) {
+                        tab.classList.add('bg-primary-100', 'text-primary-700');
+                        tab.classList.remove('text-gray-600', 'hover:bg-gray-100');
+                    } else {
+                        tab.classList.remove('bg-primary-100', 'text-primary-700');
+                        tab.classList.add('text-gray-600', 'hover:bg-gray-100');
+                    }
+                });
+            });
+        });
+
+        // Base64 encode/decode functionality
+        const encodeBtn = document.getElementById('encode-btn');
+        const decodeBtn = document.getElementById('decode-btn');
+        const inputText = document.getElementById('input-text');
+        const outputText = document.getElementById('output-text-area');
+        const copyBtn = document.getElementById('copy-btn');
+        const clearBtn = document.getElementById('clear-btn');
+        const downloadBtn = document.getElementById('download-btn');
+        const fileUpload = document.getElementById('file-upload');
+        const imageUrl = document.getElementById('image-url');
+        const fetchUrl = document.getElementById('fetch-url');
+        const previewContainer = document.getElementById('preview-container');
+
+        encodeBtn.addEventListener('click', () => {
+            const input = inputText.value.trim();
+            if (input) {
+                const encoded = btoa(input);
+                outputText.value = encoded;
+                decodeBtn.disabled = false;
+            }
+        });
+
+        decodeBtn.addEventListener('click', () => {
+            const input = outputText.value.trim();
+            if (input) {
+                try {
+                    const decoded = atob(input);
+                    inputText.value = decoded;
+                } catch (e) {
+                    alert('Invalid Base64 string');
+                }
+            }
+        });
+
+        copyBtn.addEventListener('click', () => {
+            outputText.select();
+            document.execCommand('copy');
+            
+            // Show copied feedback
+            const originalText = copyBtn.innerHTML;
+            copyBtn.innerHTML = '<i data-feather="check" class="w-4 h-4"></i><span>Copied!</span>';
+            setTimeout(() => {
+                copyBtn.innerHTML = originalText;
+                feather.replace();
+            }, 2000);
+        });
+
+        clearBtn.addEventListener('click', () => {
+            inputText.value = '';
+            outputText.value = '';
+            decodeBtn.disabled = true;
+            previewContainer.innerHTML = '<p class="text-gray-500">Image preview will appear here</p>';
+        });
+
+        downloadBtn.addEventListener('click', () => {
+            const content = outputText.value;
+            if (!content) return;
+            
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'base64_output.txt';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+
+        fileUpload.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const base64String = event.target.result.split(',')[1];
+                outputText.value = base64String;
+                decodeBtn.disabled = false;
+                
+                // If it's an image, show preview
+                if (file.type.startsWith('image/')) {
+                    document.getElementById('output-image-tab').click();
+                    previewContainer.innerHTML = `<img src="${event.target.result}" alt="Preview" class="max-w-full max-h-64 mx-auto">`;
+                }
+            };
+            reader.readAsDataURL(file);
+        });
+
+        fetchUrl.addEventListener('click', async () => {
+            const url = imageUrl.value.trim();
+            if (!url) return;
+            
+            try {
+                const response = await fetch(url);
+                const blob = await response.blob();
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const base64String = event.target.result.split(',')[1];
+                    outputText.value = base64String;
+                    decodeBtn.disabled = false;
+                    
+                    // Show image preview
+                    if (blob.type.startsWith('image/')) {
+                        document.getElementById('output-image-tab').click();
+                        previewContainer.innerHTML = `<img src="${event.target.result}" alt="Preview" class="max-w-full max-h-64 mx-auto">`;
+                    }
+                };
+                reader.readAsDataURL(blob);
+            } catch (e) {
+                alert('Error fetching image from URL');
+            }
+        });
+    </script>
+</body>
+</html>
